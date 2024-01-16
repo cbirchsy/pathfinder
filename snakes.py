@@ -188,7 +188,7 @@ def seed_snake(image, mask,
         _, raw_num_available_coordinates = find_available_coordinates(np.ceil(mask-0.3), margin=0)
         available_coordinates, num_available_coordinates = find_available_coordinates(np.ceil(dilated_mask-0.3), margin=0)
         if (stop_with_availability is not None) & \
-           (np.float(raw_num_available_coordinates)/(mask.shape[0]*mask.shape[1]) < stop_with_availability):
+           (np.float64(raw_num_available_coordinates)/(mask.shape[0]*mask.shape[1]) < stop_with_availability):
             #print('critical % of mask occupied before dilation. finalizing')
             return image, mask, np.zeros_like(mask), None, None, False
         if num_available_coordinates == 0:
@@ -360,17 +360,19 @@ def draw_line_n_mask(im_size, start_coord, orientation, length, thickness, margi
 
     # resize with interpolation + apply contrast
     miniline_shape = (length + int(np.ceil(thickness)) + margin) *2 + 1
-    miniline_im = scipy.misc.imresize(np.array(miniline_blown_im),
-                                      (miniline_shape, miniline_shape),
-                                      interp='lanczos').astype(np.float)/255
+    # miniline_im = scipy.misc.imresize(np.array(miniline_blown_im),
+    #                                   (miniline_shape, miniline_shape),
+    #                                   interp='lanczos').astype(np.float)/255
+    miniline_im = np.array(Image.fromarray(np.array(miniline_blown_im)).resize((miniline_shape, miniline_shape))).astype(np.float64)/255
     if contrast_scale != 1.0:
         miniline_im *= contrast_scale
 
     # draw a mask
     minimask_blown_im = binary_dilate_custom(miniline_blown_im, large_dilation_struct, value_scale=1.).astype(np.uint8)
-    minimask_im = scipy.misc.imresize(np.array(minimask_blown_im),
-                        (miniline_shape, miniline_shape),
-                        interp='lanczos').astype(np.float) / 255
+    # minimask_im = scipy.misc.imresize(np.array(minimask_blown_im),
+    #                     (miniline_shape, miniline_shape),
+    #                     interp='lanczos').astype(np.float) / 255
+    minimask_im = np.array(Image.fromarray(np.array(minimask_blown_im)).resize((miniline_shape, miniline_shape))).astype(np.float64)/255
 
     #minimask_im = binary_dilate(miniline_im, margin, type='1', scale=1.).astype(np.uint8)
 
@@ -521,13 +523,15 @@ def test():
     plt.figure(figsize=(10, 10))
     plt.subplot(2, 1, 1)
     red_target = gray2red(image1)
-    show1 = scipy.misc.imresize(red_target, (imsize, imsize), interp='lanczos')
+    # show1 = scipy.misc.imresize(red_target, (imsize, imsize), interp='lanczos')
+    show1 = np.array(Image.fromarray(red_target).resize((imsize, imsize)))
     plt.imshow(show1)
     plt.axis('off')
 
     plt.subplot(2, 1, 2)
     gray_total = gray2gray(1 - image3)
-    show2 = scipy.misc.imresize(gray_total, (imsize, imsize), interp='lanczos')
+    # show2 = scipy.misc.imresize(gray_total, (imsize, imsize), interp='lanczos')
+    show2 = np.array(Image.fromarray(gray_total).resize((imsize, imsize)))
     plt.imshow(show2)
     plt.axis('off')
 
@@ -661,4 +665,3 @@ if __name__ == "__main__":
     # 6. draw mask M = max(M, m_last)
     # 7. m_last = m_current.copy()
     # 8. retrial_count = 0
-

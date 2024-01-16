@@ -12,6 +12,7 @@ from scipy import ndimage
 import time
 import cv2
 import random
+import imageio
 cv2.useOptimized()
 
 import snakes
@@ -227,7 +228,8 @@ def draw_circle(window_size, coordinate, radius, aa_scale):
                     -coordinate[1]*aa_scale:(window_size[1]-coordinate[1])*aa_scale]
     mask = x ** 2 + y ** 2 <= (radius*aa_scale) ** 2
     image[mask] = 1
-    return scipy.misc.imresize(image, (window_size[0], window_size[1]), interp='lanczos')
+    # return scipy.misc.imresize(image, (window_size[0], window_size[1]), interp='lanczos')
+    return np.array(Image.fromarray(image).resize((window_size[0], window_size[1])))
 
 
 def from_wrapper(args):
@@ -332,21 +334,22 @@ def from_wrapper(args):
         origin_circle = draw_circle(args.window_size, origin_mark_coord, args.marker_radius, args.antialias_scale)
         terminal_circle = draw_circle(args.window_size, terminal_mark_coord, args.marker_radius, args.antialias_scale)
         if args.segmentation_task:
-            marker = origin_circle.astype(np.float) / 255
-            merker2 = terminal_circle.astype(np.float) / 255
+            marker = origin_circle.astype(np.float64)
+            merker2 = terminal_circle.astype(np.float64)
             image_marked = np.maximum(image, marker)
             target_segment = np.maximum(twosnakes[origin_mark_idx], marker)
             if args.segmentation_task_double_circle:
                 image_marked = np.maximum(image_marked, merker2)
                 target_segment = np.maximum(target_segment, merker2)
-            target_segment = (target_segment>0.5).astype(np.float)
+            target_segment = (target_segment>0.5).astype(np.float64)
         else:
-            markers = np.maximum(origin_circle, terminal_circle).astype(np.float) / 255
+            markers = np.maximum(origin_circle, terminal_circle).astype(np.float64)
             image_marked = np.maximum(image, markers)
 
         if (args.pause_display):
             plt.figure(figsize=(10, 10))
-            show2 = scipy.misc.imresize(image_marked, (args.window_size[0], args.window_size[1]), interp='lanczos')
+            # show2 = scipy.misc.imresize(image_marked, (args.window_size[0], args.window_size[1]), interp='lanczos')
+            show2 = np.array(Image.fromarray(image_marked).resize((args.window_size[0], args.window_size[1])))
             plt.imshow(show2)
             plt.colorbar()
             plt.axis('off')
@@ -354,14 +357,14 @@ def from_wrapper(args):
         if args.segmentation_task:
             if (args.save_images):
                 fn = "sample_%s.png"%(iimg)
-                scipy.misc.imsave(os.path.join(args.contour_path, contour_sub_path, fn), image_marked)
-                scipy.misc.imsave(os.path.join(args.contour_path, seg_sub_path, fn), target_segment)
+                imageio.imsave(os.path.join(args.contour_path, contour_sub_path, fn), (image_marked*255).astype(np.uint8))
+                imageio.imsave(os.path.join(args.contour_path, seg_sub_path, fn), (target_segment*255).astype(np.uint8))
             if (args.save_metadata):
                 metadata = accumulate_meta_segment(metadata, contour_sub_path, seg_sub_path, fn, args, iimg, paddle_margin=margin)
         else:
             if (args.save_images):
                 fn = "sample_%s.png"%(iimg)
-                scipy.misc.imsave(os.path.join(args.contour_path, contour_sub_path, fn), image_marked)
+                imageio.imsave(os.path.join(args.contour_path, contour_sub_path, fn), (image_marked*255).astype(np.uint8))
             if (args.save_metadata):
                 metadata = accumulate_meta(metadata, label, contour_sub_path, fn, args, iimg, paddle_margin=margin)
 
