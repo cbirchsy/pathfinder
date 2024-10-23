@@ -229,7 +229,7 @@ def draw_circle(window_size, coordinate, radius, aa_scale):
     mask = x ** 2 + y ** 2 <= (radius*aa_scale) ** 2
     image[mask] = 1
     # return scipy.misc.imresize(image, (window_size[0], window_size[1]), interp='lanczos')
-    return np.array(Image.fromarray(image).resize((window_size[0], window_size[1])))
+    return np.array(Image.fromarray(image).resize((window_size[0], window_size[1]), resample=Image.Resampling.BILINEAR))
 
 
 def from_wrapper(args):
@@ -334,22 +334,22 @@ def from_wrapper(args):
         origin_circle = draw_circle(args.window_size, origin_mark_coord, args.marker_radius, args.antialias_scale)
         terminal_circle = draw_circle(args.window_size, terminal_mark_coord, args.marker_radius, args.antialias_scale)
         if args.segmentation_task:
-            marker = origin_circle.astype(np.float64)
-            merker2 = terminal_circle.astype(np.float64)
+            marker = origin_circle.astype(float)
+            merker2 = terminal_circle.astype(float)
             image_marked = np.maximum(image, marker)
             target_segment = np.maximum(twosnakes[origin_mark_idx], marker)
             if args.segmentation_task_double_circle:
                 image_marked = np.maximum(image_marked, merker2)
                 target_segment = np.maximum(target_segment, merker2)
-            target_segment = (target_segment>0.5).astype(np.float64)
+            target_segment = (target_segment>0.5).astype(float)
         else:
-            markers = np.maximum(origin_circle, terminal_circle).astype(np.float64)
+            markers = np.maximum(origin_circle, terminal_circle).astype(float)
             image_marked = np.maximum(image, markers)
 
         if (args.pause_display):
             plt.figure(figsize=(10, 10))
             # show2 = scipy.misc.imresize(image_marked, (args.window_size[0], args.window_size[1]), interp='lanczos')
-            show2 = np.array(Image.fromarray(image_marked).resize((args.window_size[0], args.window_size[1])))
+            show2 = np.array(Image.fromarray(image_marked).resize((args.window_size[0], args.window_size[1]), resample=Image.Resampling.BILINEAR))
             plt.imshow(show2)
             plt.colorbar()
             plt.axis('off')
